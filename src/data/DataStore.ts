@@ -749,6 +749,7 @@ class DataStore {
             if (dimSize === 1) {
                 const dimStorage = storeArr[dims[0]];
                 if (plusOne) {
+                    offset = 1;
                     let minVal = null;
                     let minIdx = null;
                     let maxVal = null;
@@ -773,7 +774,7 @@ class DataStore {
                         idx++;
                     }
                     if (minIdx !== null) {
-                        newIndices[offset++] = minIdx;
+                        newIndices[0] = minIdx;
                     }
                     if (maxIdx !== null) {
                         newIndices[offset++] = maxIdx;
