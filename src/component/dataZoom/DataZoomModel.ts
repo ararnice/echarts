@@ -83,7 +83,7 @@ export interface DataZoomOption extends ComponentOption {
    * the filtered points when filterModel is set to 'empty', but
    * be connected when set to 'filter'.
    */
-  filterMode?: "filter" | "weakFilter" | "filterLeftRight" | "empty" | "none";
+  filterMode?: "filter" | "weakFilter" | "empty" | "none";
 
   /**
    * Dispatch action by the fixed rate, avoid frequency.

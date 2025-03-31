@@ -334,7 +334,7 @@ class AxisProxy {
         return;
       }
 
-      if (filterMode === "filterLeftRight") {
+      if (filterMode === "weakFilter") {
         const store = seriesData.getStore();
         const dataDimIndices = zrUtil.map(
           dataDims,
@@ -360,33 +360,6 @@ class AxisProxy {
               value < valueWindow[0] && leftOutValue < valueWindow[0];
             const thisRightOut =
               value > valueWindow[1] && rightOutValue < valueWindow[1];
-            if (thisHasValue && !thisLeftOut && !thisRightOut) {
-              return true;
-            }
-            thisHasValue && (hasValue = true);
-            thisLeftOut && (leftOut = true);
-            thisRightOut && (rightOut = true);
-          }
-          // If both left out and right out, do not filter.
-          return hasValue && leftOut && rightOut;
-        });
-      }
-      if (filterMode === "weakFilter") {
-        const store = seriesData.getStore();
-        const dataDimIndices = zrUtil.map(
-          dataDims,
-          dim => seriesData.getDimensionIndex(dim),
-          seriesData
-        );
-        seriesData.filterSelf(function(dataIndex) {
-          let leftOut;
-          let rightOut;
-          let hasValue;
-          for (let i = 0; i < dataDims.length; i++) {
-            const value = store.get(dataDimIndices[i], dataIndex) as number;
-            const thisHasValue = !isNaN(value);
-            const thisLeftOut = value < valueWindow[0];
-            const thisRightOut = value > valueWindow[1];
             if (thisHasValue && !thisLeftOut && !thisRightOut) {
               return true;
             }
