@@ -359,7 +359,7 @@ class AxisProxy {
             const thisLeftOut =
               value < valueWindow[0] && leftOutValue < valueWindow[0];
             const thisRightOut =
-              value > valueWindow[1] && rightOutValue < valueWindow[1];
+              value > valueWindow[1] && rightOutValue > valueWindow[1];
             if (thisHasValue && !thisLeftOut && !thisRightOut) {
               return true;
             }
