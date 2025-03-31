@@ -716,7 +716,7 @@ class DataStore {
      * Select data in range. (For optimization of filter)
      * (Manually inline code, support 5 million data filtering in data zoom.)
      */
-     selectRange(range: {[dimIdx: number]: [number, number]}, plusOne: boolean = false): DataStore {
+    selectRange(range: {[dimIdx: number]: [number, number]}): DataStore {
         const newStore = this.clone();
 
         const len = newStore._count;

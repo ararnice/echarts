@@ -334,7 +334,7 @@ class AxisProxy {
         return;
       }
 
-      if (filterMode === "filterPlusOne") {
+      if (filterMode === "filterLeftRight") {
         const store = seriesData.getStore();
         const dataDimIndices = zrUtil.map(
           dataDims,
