@@ -370,7 +370,8 @@ class AxisProxy {
           // If both left out and right out, do not filter.
           return hasValue && leftOut && rightOut;
         });
-      } else if (filterMode === "weakFilter") {
+      }
+      if (filterMode === "weakFilter") {
         const store = seriesData.getStore();
         const dataDimIndices = zrUtil.map(
           dataDims,
@@ -409,7 +410,7 @@ class AxisProxy {
             range[dim] = valueWindow;
 
             // console.time('select');
-            seriesData.selectRange(range, filterMode === "filterPlusOne");
+            seriesData.selectRange(range);
             // console.timeEnd('select');
           }
         });
