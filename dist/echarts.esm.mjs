@@ -25583,6 +25583,16 @@ var theme = {
   toolbox: {
     iconStyle: {
       borderColor: color$2.accent50
+    },
+    feature: {
+      dataView: {
+        backgroundColor: backgroundColor,
+        textColor: color$2.primary,
+        textareaColor: color$2.background,
+        textareaBorderColor: color$2.border,
+        buttonColor: color$2.accent50,
+        buttonTextColor: color$2.neutral00
+      }
     }
   },
   tooltip: {
@@ -43088,7 +43098,7 @@ function updateStyle(el, data, dataIndex, itemModel, layout, seriesModel, isHori
   el.useStyle(style);
   var cursorStyle = itemModel.getShallow('cursor');
   cursorStyle && el.attr('cursor', cursorStyle);
-  var labelPositionOutside = isPolar ? isHorizontalOrRadial ? layout.r >= layout.r0 ? 'endArc' : 'startArc' : layout.endAngle >= layout.startAngle ? 'endAngle' : 'startAngle' : isHorizontalOrRadial ? layout.height >= 0 ? 'bottom' : 'top' : layout.width >= 0 ? 'right' : 'left';
+  var labelPositionOutside = isPolar ? isHorizontalOrRadial ? layout.r >= layout.r0 ? 'endArc' : 'startArc' : layout.endAngle >= layout.startAngle ? 'endAngle' : 'startAngle' : isHorizontalOrRadial ? getLabelPositionForHorizontal(layout, seriesModel.coordinateSystem) : getLabelPositionForVertical(layout, seriesModel.coordinateSystem);
   var labelStatesModels = getLabelStatesModels(itemModel);
   setLabelStyle(el, labelStatesModels, {
     labelFetcher: seriesModel,
@@ -43273,6 +43283,22 @@ function createBackgroundEl(coord, isHorizontalOrRadial, layout) {
     silent: true,
     z2: 0
   });
+}
+function getLabelPositionForHorizontal(layout, coordSys) {
+  if (layout.height === 0) {
+    // For zero height, determine position based on axis inverse status
+    var valueAxis = coordSys.getOtherAxis(coordSys.getBaseAxis());
+    return valueAxis.inverse ? 'bottom' : 'top';
+  }
+  return layout.height > 0 ? 'bottom' : 'top';
+}
+function getLabelPositionForVertical(layout, coordSys) {
+  if (layout.width === 0) {
+    // For zero width, determine position based on axis inverse status
+    var valueAxis = coordSys.getOtherAxis(coordSys.getBaseAxis());
+    return valueAxis.inverse ? 'left' : 'right';
+  }
+  return layout.width >= 0 ? 'right' : 'left';
 }
 
 function install$3(registers) {
@@ -48558,6 +48584,7 @@ var RadarModel = /** @class */function (_super) {
   RadarModel.prototype.optionUpdated = function () {
     var boundaryGap = this.get('boundaryGap');
     var splitNumber = this.get('splitNumber');
+    var clockwise = this.get('clockwise');
     var scale = this.get('scale');
     var axisLine = this.get('axisLine');
     var axisTick = this.get('axisTick');
@@ -48585,6 +48612,7 @@ var RadarModel = /** @class */function (_super) {
       var innerIndicatorOpt = merge(clone(indicatorOpt), {
         boundaryGap: boundaryGap,
         splitNumber: splitNumber,
+        clockwise: clockwise,
         scale: scale,
         axisLine: axisLine,
         axisTick: axisTick,
@@ -48624,6 +48652,7 @@ var RadarModel = /** @class */function (_super) {
     center: ['50%', '50%'],
     radius: '50%',
     startAngle: 90,
+    clockwise: false,
     axisName: {
       show: true,
       color: tokens.color.axisLabel
@@ -48881,6 +48910,7 @@ var Radar = /** @class */function () {
   Radar.prototype.resize = function (radarModel, api) {
     var refContainer = createBoxLayoutReference(radarModel, api).refContainer;
     var center = radarModel.get('center');
+    var clockwise = radarModel.get('clockwise') || false;
     var viewSize = Math.min(refContainer.width, refContainer.height) / 2;
     this.cx = parsePercent$1(center[0], refContainer.width) + refContainer.x;
     this.cy = parsePercent$1(center[1], refContainer.height) + refContainer.y;
@@ -48892,9 +48922,10 @@ var Radar = /** @class */function () {
     }
     this.r0 = parsePercent$1(radius[0], viewSize);
     this.r = parsePercent$1(radius[1], viewSize);
+    var sign = clockwise ? -1 : 1;
     each(this._indicatorAxes, function (indicatorAxis, idx) {
       indicatorAxis.setExtent(this.r0, this.r);
-      var angle = this.startAngle + idx * Math.PI * 2 / this._indicatorAxes.length;
+      var angle = this.startAngle + sign * idx * Math.PI * 2 / this._indicatorAxes.length;
       // Normalize to [-PI, PI]
       angle = Math.atan2(Math.sin(angle), Math.cos(angle));
       indicatorAxis.angle = angle;
@@ -51946,7 +51977,7 @@ var View = /** @class */function (_super) {
     // can use '0%' to map the top-left of `View['_rect']` to the center of `View['_viewRect']`.
     var opt = this._opt;
     if (opt && opt.api && opt.ecModel && opt.ecModel.getShallow('legacyViewCoordSysCenterBase') && centerCoord) {
-      centerCoord = [parsePercent$1(centerCoord[0], opt.api.getWidth()), parsePercent$1(centerCoord[1], opt.api.getWidth())];
+      centerCoord = [parsePercent$1(centerCoord[0], opt.api.getWidth()), parsePercent$1(centerCoord[1], opt.api.getHeight())];
     }
     this._centerOption = clone(centerCoord);
     this._updateCenterAndZoom();
@@ -77589,7 +77620,7 @@ var AxisProxy = /** @class */function () {
     return seriesModels;
   };
   AxisProxy.prototype.getAxisModel = function () {
-    return this.ecModel.getComponent(this._dimName + 'Axis', this._axisIndex);
+    return this.ecModel.getComponent(this._dimName + "Axis", this._axisIndex);
   };
   AxisProxy.prototype.getMinMaxSpan = function () {
     return clone(this._minMaxSpan);
@@ -77606,9 +77637,9 @@ var AxisProxy = /** @class */function () {
     var percentWindow = [];
     var valueWindow = [];
     var hasPropModeValue;
-    each$8(['start', 'end'], function (prop, idx) {
+    each$8(["start", "end"], function (prop, idx) {
       var boundPercent = opt[prop];
-      var boundValue = opt[prop + 'Value'];
+      var boundValue = opt[prop + "Value"];
       // Notice: dataZoom is based either on `percentProp` ('start', 'end') or
       // on `valueProp` ('startValue', 'endValue'). (They are based on the data extent
       // but not min/max of axis, which will be calculated by data window then).
@@ -77622,7 +77653,7 @@ var AxisProxy = /** @class */function () {
       // `valueProp`. consider two axes constrolled by one dataZoom. They have different
       // data extent. All of values that are overflow the `dataExtent` will be calculated
       // to percent '100%').
-      if (rangePropMode[idx] === 'percent') {
+      if (rangePropMode[idx] === "percent") {
         boundPercent == null && (boundPercent = percentExtent[idx]);
         // Use scale.parse to math round for category or time axis.
         boundValue = scale.parse(linearMap(boundPercent, percentExtent, dataExtent));
@@ -77650,8 +77681,8 @@ var AxisProxy = /** @class */function () {
     var spans = this._minMaxSpan;
     hasPropModeValue ? restrictSet(valueWindow, percentWindow, dataExtent, percentExtent, false) : restrictSet(percentWindow, valueWindow, percentExtent, dataExtent, true);
     function restrictSet(fromWindow, toWindow, fromExtent, toExtent, toValue) {
-      var suffix = toValue ? 'Span' : 'ValueSpan';
-      sliderMove(0, fromWindow, fromExtent, 'all', spans['min' + suffix], spans['max' + suffix]);
+      var suffix = toValue ? "Span" : "ValueSpan";
+      sliderMove(0, fromWindow, fromExtent, "all", spans["min" + suffix], spans["max" + suffix]);
       for (var i = 0; i < 2; i++) {
         toWindow[i] = linearMap(fromWindow[i], fromExtent, toExtent, true);
         toValue && (toWindow[i] = scale.parse(toWindow[i]));
@@ -77688,9 +77719,9 @@ var AxisProxy = /** @class */function () {
     }
     var axisDim = this._dimName;
     var seriesModels = this.getTargetSeriesModels();
-    var filterMode = dataZoomModel.get('filterMode');
+    var filterMode = dataZoomModel.get("filterMode");
     var valueWindow = this._valueWindow;
-    if (filterMode === 'none') {
+    if (filterMode === "none") {
       return;
     }
     // FIXME
@@ -77718,7 +77749,7 @@ var AxisProxy = /** @class */function () {
       if (!dataDims.length) {
         return;
       }
-      if (filterMode === 'weakFilter') {
+      if (filterMode === "weakFilter") {
         var store_1 = seriesData.getStore();
         var dataDimIndices_1 = map(dataDims, function (dim) {
           return seriesData.getDimensionIndex(dim);
@@ -77730,8 +77761,8 @@ var AxisProxy = /** @class */function () {
           for (var i = 0; i < dataDims.length; i++) {
             var value = store_1.get(dataDimIndices_1[i], dataIndex);
             var thisHasValue = !isNaN(value);
-            var thisLeftOut = value < valueWindow[0];
-            var thisRightOut = value > valueWindow[1];
+            var thisLeftOut = value < valueWindow[0] - 1;
+            var thisRightOut = value > valueWindow[1] + 1;
             if (thisHasValue && !thisLeftOut && !thisRightOut) {
               return true;
             }
@@ -77744,13 +77775,13 @@ var AxisProxy = /** @class */function () {
         });
       } else {
         each$8(dataDims, function (dim) {
-          if (filterMode === 'empty') {
+          if (filterMode === "empty") {
             seriesModel.setData(seriesData = seriesData.map(dim, function (value) {
               return !isInWindow(value) ? NaN : value;
             }));
           } else {
             var range = {};
-            range[dim] = valueWindow;
+            range[dim] = [valueWindow[0] - 1, valueWindow[1] + 1];
             // console.time('select');
             seriesData.selectRange(range);
             // console.timeEnd('select');
@@ -77769,9 +77800,9 @@ var AxisProxy = /** @class */function () {
     var minMaxSpan = this._minMaxSpan = {};
     var dataZoomModel = this._dataZoomModel;
     var dataExtent = this._dataExtent;
-    each$8(['min', 'max'], function (minMax) {
-      var percentSpan = dataZoomModel.get(minMax + 'Span');
-      var valueSpan = dataZoomModel.get(minMax + 'ValueSpan');
+    each$8(["min", "max"], function (minMax) {
+      var percentSpan = dataZoomModel.get(minMax + "Span");
+      var valueSpan = dataZoomModel.get(minMax + "ValueSpan");
       valueSpan != null && (valueSpan = this.getAxisModel().axis.scale.parse(valueSpan));
       // minValueSpan and maxValueSpan has higher priority than minSpan and maxSpan
       if (valueSpan != null) {
@@ -77779,8 +77810,8 @@ var AxisProxy = /** @class */function () {
       } else if (percentSpan != null) {
         valueSpan = linearMap(percentSpan, [0, 100], dataExtent, true) - dataExtent[0];
       }
-      minMaxSpan[minMax + 'Span'] = percentSpan;
-      minMaxSpan[minMax + 'ValueSpan'] = valueSpan;
+      minMaxSpan[minMax + "Span"] = percentSpan;
+      minMaxSpan[minMax + "ValueSpan"] = valueSpan;
     }, this);
   };
   AxisProxy.prototype._setAxisModel = function () {
@@ -77799,10 +77830,10 @@ var AxisProxy = /** @class */function () {
     // little when zooming. So it will not be fixed until some users require it strongly.
     var rawExtentInfo = axisModel.axis.scale.rawExtentInfo;
     if (percentWindow[0] !== 0) {
-      rawExtentInfo.setDeterminedMinMax('min', +valueWindow[0].toFixed(precision));
+      rawExtentInfo.setDeterminedMinMax("min", +valueWindow[0].toFixed(precision));
     }
     if (percentWindow[1] !== 100) {
-      rawExtentInfo.setDeterminedMinMax('max', +valueWindow[1].toFixed(precision));
+      rawExtentInfo.setDeterminedMinMax("max", +valueWindow[1].toFixed(precision));
     }
     rawExtentInfo.freeze();
   };

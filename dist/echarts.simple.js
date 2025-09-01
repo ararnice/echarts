@@ -24250,6 +24250,16 @@
       toolbox: {
         iconStyle: {
           borderColor: color$2.accent50
+        },
+        feature: {
+          dataView: {
+            backgroundColor: backgroundColor,
+            textColor: color$2.primary,
+            textareaColor: color$2.background,
+            textareaBorderColor: color$2.border,
+            buttonColor: color$2.accent50,
+            buttonTextColor: color$2.neutral00
+          }
         }
       },
       tooltip: {
@@ -39305,7 +39315,7 @@
       el.useStyle(style);
       var cursorStyle = itemModel.getShallow('cursor');
       cursorStyle && el.attr('cursor', cursorStyle);
-      var labelPositionOutside = isPolar ? isHorizontalOrRadial ? layout.r >= layout.r0 ? 'endArc' : 'startArc' : layout.endAngle >= layout.startAngle ? 'endAngle' : 'startAngle' : isHorizontalOrRadial ? layout.height >= 0 ? 'bottom' : 'top' : layout.width >= 0 ? 'right' : 'left';
+      var labelPositionOutside = isPolar ? isHorizontalOrRadial ? layout.r >= layout.r0 ? 'endArc' : 'startArc' : layout.endAngle >= layout.startAngle ? 'endAngle' : 'startAngle' : isHorizontalOrRadial ? getLabelPositionForHorizontal(layout, seriesModel.coordinateSystem) : getLabelPositionForVertical(layout, seriesModel.coordinateSystem);
       var labelStatesModels = getLabelStatesModels(itemModel);
       setLabelStyle(el, labelStatesModels, {
         labelFetcher: seriesModel,
@@ -39490,6 +39500,22 @@
         silent: true,
         z2: 0
       });
+    }
+    function getLabelPositionForHorizontal(layout, coordSys) {
+      if (layout.height === 0) {
+        // For zero height, determine position based on axis inverse status
+        var valueAxis = coordSys.getOtherAxis(coordSys.getBaseAxis());
+        return valueAxis.inverse ? 'bottom' : 'top';
+      }
+      return layout.height > 0 ? 'bottom' : 'top';
+    }
+    function getLabelPositionForVertical(layout, coordSys) {
+      if (layout.width === 0) {
+        // For zero width, determine position based on axis inverse status
+        var valueAxis = coordSys.getOtherAxis(coordSys.getBaseAxis());
+        return valueAxis.inverse ? 'left' : 'right';
+      }
+      return layout.width >= 0 ? 'right' : 'left';
     }
 
     function install$2(registers) {
